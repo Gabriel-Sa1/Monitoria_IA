@@ -4,19 +4,14 @@ from groq import Groq
 
 load_dotenv()
 
-api_key = os.getenv("GROQ_API_KEY")
+# Instancia o cliente direto da env
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-if not api_key:
-    raise ValueError("ERRO: A chave GROQ_API_KEY não foi encontrada no arquivo .env!")
+model = "qwen/qwen3.8-27b"
 
-client = Groq(api_key=api_key)
-
-MODELO = "qwen/qwen3.8-27b"
-
-print("Entregável 01")
-
-response = client.chat.completions.create(
-    model=MODELO,
+# entregavel 1 
+req1 = client.chat.completions.create(
+    model=model,
     messages=[
         {"role": "system", "content": "Você é um assistente de estudos prestativo e direto. Responda de forma concisa."},
         {"role": "user", "content": "Qual é a diferença entre uma pilha e uma fila em estrutura de dados?"}
@@ -25,71 +20,59 @@ response = client.chat.completions.create(
     max_tokens=300
 )
 
-print("RESPOSTA DO MODELO")
-print(response.choices[0].message.content)
+print("Entregavel 01:")
+print(req1.choices[0].message.content)
+print("tokens entrada:", req1.usage.prompt_tokens)
+print("tokens saida:", req1.usage.completion_tokens)
+print("total:", req1.usage.total_tokens)
+print("-" * 20)
 
-print("\nUso de Tokens")
-print(f"Tokens de Entrada (Prompt) : {response.usage.prompt_tokens}")
-print(f"Tokens de Saída (Completion): {response.usage.completion_tokens}")
-print(f"Total de Tokens            : {response.usage.total_tokens}")
-
-print("\nENTREGÁVEL 02")
-
-print("\n[A1] Teste SEM histórico:")
-
+# entregavel 2
+# a1-sem hist
 client.chat.completions.create(
-    model=MODELO,
-    messages=[
-        {"role": "user", "content": "Olá! Meu nome é Gabriel."}
-    ],
+    model=model,
+    messages=[{"role": "user", "content": "Olá! Meu nome é Gabriel."}],
     max_tokens=50
 )
 
-res_sem_historico = client.chat.completions.create(
-    model=MODELO,
-    messages=[
-        {"role": "user", "content": "Qual é o meu nome?"}
-    ],
+r_sem = client.chat.completions.create(
+    model=model,
+    messages=[{"role": "user", "content": "Qual é o meu nome?"}],
     max_tokens=100
 )
-print("Resposta do modelo:", res_sem_historico.choices[0].message.content)
+print("Sem historico:", r_sem.choices[0].message.content)
 
-print("\n[A2] Teste COM histórico explícito:")
+# a2-com hist
+msgs = [
+    {"role": "system", "content": "Você é um assistente de estudos prestativo."},
+    {"role": "user", "content": "Olá! Meu nome é Gabriel."},
+    {"role": "assistant", "content": "Olá Gabriel! Como posso te ajudar hoje?"},
+    {"role": "user", "content": "Qual é o meu nome?"}
+]
 
-res_com_historico = client.chat.completions.create(
-    model=MODELO,
-    messages=[
-        {"role": "system", "content": "Você é um assistente de estudos prestativo."},
-        {"role": "user", "content": "Olá! Meu nome é Gabriel."},
-        {"role": "assistant", "content": "Olá Gabriel! Como posso te ajudar hoje?"},
-        {"role": "user", "content": "Qual é o meu nome?"}
-    ],
+r_com = client.chat.completions.create(
+    model=model,
+    messages=msgs,
     max_tokens=100
 )
-print("Resposta do modelo:", res_com_historico.choices[0].message.content)
+print("Com historico:", r_com.choices[0].message.content)
+print("-" * 20)
 
-print("\nENTREGÁVEL 02 - EXPERIMENTO B: TEMPERATURA")
+# b - temp
+p = "Crie uma analogia curta de 2 frases para explicar o que é uma API."
 
-prompt_temp = "Crie uma analogia curta de 2 frases para explicar o que é uma API."
-
-res_temp_0 = client.chat.completions.create(
-    model=MODELO,
-    messages=[{"role": "user", "content": prompt_temp}],
+t0 = client.chat.completions.create(
+    model=model,
+    messages=[{"role": "user", "content": p}],
     temperature=0.0,
     max_tokens=100
 )
+print("Temp 0.0:", t0.choices[0].message.content)
 
-print("\n[B1] Resposta com Temperature = 0.0:")
-print(res_temp_0.choices[0].message.content)
-
-res_temp_1 = client.chat.completions.create(
-    model=MODELO,
-    messages=[{"role": "user", "content": prompt_temp}],
+t1 = client.chat.completions.create(
+    model=model,
+    messages=[{"role": "user", "content": p}],
     temperature=1.0,
     max_tokens=100
 )
-
-print("\n[B2] Resposta com Temperature = 1.0:")
-print(res_temp_1.choices[0].message.content)
-
-print("\nFIM DA EXECUÇÃO")
+print("Temp 1.0:", t1.choices[0].message.content)
